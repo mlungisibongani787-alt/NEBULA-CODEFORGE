@@ -353,8 +353,8 @@ html[data-theme="dark"] .qr-result-stage{background:#fff}
             </div>
             <div class="qr-section-title">Frame shapes</div>
             <div class="qr-frame-grid" id="qrFrameShapes">
-              <button type="button" class="qr-frame-choice active" data-frame-shape="square"><span class="frame-demo square"></span><small>Square</small></button>
-              <button type="button" class="qr-frame-choice" data-frame-shape="rounded"><span class="frame-demo rounded"></span><small>Rounded</small></button>
+              <button type="button" class="qr-frame-choice" data-frame-shape="square"><span class="frame-demo square"></span><small>Square</small></button>
+              <button type="button" class="qr-frame-choice active" data-frame-shape="rounded"><span class="frame-demo rounded"></span><small>Rounded</small></button>
               <button type="button" class="qr-frame-choice" data-frame-shape="badge"><span class="frame-demo badge"></span><small>Badge</small></button>
               <button type="button" class="qr-frame-choice" data-frame-shape="circle"><span class="frame-demo circle"></span><small>Circle</small></button>
               <button type="button" class="qr-frame-choice" data-frame-shape="corners"><span class="frame-demo corners"></span><small>Four corners</small></button>
@@ -365,22 +365,30 @@ html[data-theme="dark"] .qr-result-stage{background:#fff}
               <button type="button" class="qr-frame-choice" data-frame-shape="neon"><span class="frame-demo neon"></span><small>Neon glow</small></button>
               <button type="button" class="qr-frame-choice" data-frame-shape="ticket"><span class="frame-demo ticket"></span><small>Ticket</small></button>
               <button type="button" class="qr-frame-choice" data-frame-shape="pill"><span class="frame-demo pill"></span><small>Pill</small></button>
+              <button type="button" class="qr-frame-choice" data-frame-shape="luxury"><span class="frame-demo double"></span><small>Luxury</small></button>
+              <button type="button" class="qr-frame-choice" data-frame-shape="tech"><span class="frame-demo corners"></span><small>Tech corners</small></button>
+              <button type="button" class="qr-frame-choice" data-frame-shape="scallop"><span class="frame-demo ticket"></span><small>Scallop</small></button>
+              <button type="button" class="qr-frame-choice" data-frame-shape="wave"><span class="frame-demo gradient"></span><small>Wave</small></button>
+              <button type="button" class="qr-frame-choice" data-frame-shape="arch"><span class="frame-demo rounded"></span><small>Arch</small></button>
             </div>
             <div class="row row-3">
               <div class="field"><label>Frame background</label><input id="qrFrameBg" type="color" value="#ffffff"></div>
               <div class="field"><label>Text color</label><input id="qrFrameTextColor" type="color" value="#ffffff"></div>
               <div class="field"><label>Frame thickness</label><input id="qrFrameThickness" type="range" min="1" max="16" value="5"></div>
             </div>
-            <div class="small">The visual frame is rendered outside the encoded QR matrix to preserve scan reliability.</div>
-          </div>
-
-          <button class="qr-accordion-head" data-target="qrLogoPanel">Logo <span>＋</span></button>
-          <div class="qr-accordion-body" id="qrLogoPanel">
-            <div class="row">
-              <div class="field"><label>Upload Logo</label><input id="qrLogo2" type="file" accept="image/*"></div>
-              <div class="field"><label>Logo Size %</label><input id="qrLogoSize" type="range" min="5" max="30" value="18"><div class="small"><span id="qrLogoSizeLabel">18</span>%</div></div>
+            <div class="qr-section-title">Quick frame colours</div>
+            <div class="swatches" id="qrFrameSwatches" style="display:flex;gap:9px;flex-wrap:wrap;margin:8px 0 14px">
+              <button type="button" class="swatch" title="Midnight" data-frame-color="#111827" style="background:#111827"></button>
+              <button type="button" class="swatch" title="Ocean" data-frame-color="#087e8b" style="background:#087e8b"></button>
+              <button type="button" class="swatch" title="Royal blue" data-frame-color="#2457d6" style="background:#2457d6"></button>
+              <button type="button" class="swatch" title="Emerald" data-frame-color="#07845a" style="background:#07845a"></button>
+              <button type="button" class="swatch" title="Gold" data-frame-color="#d49a19" style="background:#d49a19"></button>
+              <button type="button" class="swatch" title="Purple" data-frame-color="#7041b8" style="background:#7041b8"></button>
+              <button type="button" class="swatch" title="Rose" data-frame-color="#c43f70" style="background:#c43f70"></button>
+              <button type="button" class="swatch" title="Coral" data-frame-color="#e45b35" style="background:#e45b35"></button>
+              <button type="button" class="swatch" title="Rainbow gradient" data-frame-color="#00c9d8" style="background:linear-gradient(135deg,#00c9d8,#7041b8,#e45b35)"></button>
             </div>
-            <button class="btn" id="useBMN.NEXUSLogo"><i data-lucide="image"></i>Use BMN.NEXUS Logo</button>
+            <div class="small">The QR stays clean in the centre. Frames, labels and colours are added around it so the code remains easy to scan.</div>
           </div>
 
           <button class="qr-accordion-head" data-target="qrColorPanel">Color <span>＋</span></button>
@@ -669,7 +677,7 @@ const QR_TYPES = {
  pdf:{title:"PDF / File",html:`<div class="file-drop"><input id="qf_pdf" type="file" accept=".pdf,.txt,.csv,.xlsx,.doc,.docx,image/*"><p>Choose a file. CodeForge stores file metadata in the QR unless a public/hosted URL is supplied.</p></div><div class="field mt"><label>Hosted File URL (optional)</label><input id="qf_pdf_url" placeholder="https://..."></div>`},
  social:{title:"Social Media",html:`<div class="row"><div class="field"><label>Platform</label><select id="qf_social_platform"><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>LinkedIn</option><option>YouTube</option><option>X</option><option>Website</option></select></div><div class="field"><label>Profile URL</label><input id="qf_social_url" placeholder="https://"></div></div>`}
 };
-let activeQrType="url", qrStudioLogo=null, qrStudioPayload="";
+let activeQrType="url", qrStudioPayload="";
 function qrField(id){return document.getElementById(id)?.value?.trim()||""}
 function setQrType(type){
  activeQrType=type;document.querySelectorAll(".qr-type").forEach(b=>b.classList.toggle("active",b.dataset.qrtype===type));
@@ -762,19 +770,6 @@ function drawStyledQr(){
   if(qrCanvas){qrCanvas.style.width=max;qrCanvas.style.height="auto";qrCanvas.style.display="block"}
   if(qrImg){qrImg.style.width=max;qrImg.style.height="auto";qrImg.style.display="block"}
 
-  // Use the working QR renderer's canvas as the source for the optional logo.
-  if(qrStudioLogo&&qrCanvas){
-   const logoSize=Math.min(30,Math.max(5,+$("qrLogoSize").value||18))/100;
-   const im=new Image();
-   im.onload=()=>{
-    const s=qrCanvas.width*logoSize;
-    const x=(qrCanvas.width-s)/2,y=(qrCanvas.height-s)/2;
-    const ctx=qrCanvas.getContext("2d");
-    ctx.fillStyle=bg;ctx.fillRect(x-6,y-6,s+12,s+12);
-    ctx.drawImage(im,x,y,s,s);
-   };
-   im.src=qrStudioLogo;
-  }
  }
 
  // Removed the decorative fourth-corner marker so it can never overlap or block the QR code.
@@ -1001,7 +996,7 @@ function wire(){
 }
 
 
-let qrDotStyle="square", qrInnerStyle="square", qrOuterStyle="square", qrFrameIcon="none", qrFrameShape="square";
+let qrDotStyle="square", qrInnerStyle="square", qrOuterStyle="square", qrFrameIcon="none", qrFrameShape="rounded";
 let qrStylingInstance=null;
 function qrStylingDotType(){return ["square","rounded","dots","extra-rounded","classy","classy-rounded","star"].includes(qrDotStyle)?qrDotStyle:"square"}
 function qrStylingCornerType(){
@@ -1019,46 +1014,76 @@ function qrStudioCanvas(){
  return host.querySelector("canvas")||host.querySelector("img")||null;
 }
 async function buildQrDownloadCanvas(){
- const source=qrStudioCanvas(); if(!source)return null;
+ const source=qrStudioCanvas();
+ if(!source) return null;
  const qrSize=source.width||source.naturalWidth||1000;
- const frameMode=$("qrFrame")?.value||"scan", shape=qrFrameShape||"square";
+ const frameMode=$("qrFrame")?.value||"scan";
+ const shape=qrFrameShape||"rounded";
  const thickness=Math.max(1,+$("qrFrameThickness")?.value||5);
- const frameColor=$("qrFrameColor")?.value||"#111111", frameBg=$("qrFrameBg")?.value||"#ffffff";
- const textColor=$("qrFrameTextColor")?.value||"#ffffff", label=($("qrFrameText")?.value||"").trim();
- const margin=Math.max(4,+$("qrMargin2")?.value||4);
- const pad=frameMode==="none"?margin*2:Math.max(24,Math.round(qrSize*.045))+margin*2;
- const borderSpace=frameMode==="none"?0:thickness*2;
- const labelHeight=frameMode!=="none"&&label?Math.max(48,Math.round(qrSize*.075)):0;
- const outer=pad+borderSpace;
- const c=document.createElement("canvas"), ctx=c.getContext("2d");
- c.width=qrSize+outer*2; c.height=qrSize+outer*2+labelHeight;
- ctx.fillStyle=frameBg;ctx.fillRect(0,0,c.width,c.height);
- const x=outer,y=outer;
+ const frameColor=$("qrFrameColor")?.value||"#111111";
+ const frameBg=$("qrFrameBg")?.value||"#ffffff";
+ const textColor=$("qrFrameTextColor")?.value||"#ffffff";
+ const label=($("qrFrameText")?.value||"").trim();
+ const margin=Math.max(0,+$("qrMargin2")?.value||4);
+ // Keep a generous, even quiet zone around the QR modules.
+ const quiet=Math.max(16,Math.round(qrSize*Math.max(.025,margin/100)));
+ const pad=frameMode==="none"?quiet:Math.max(24,Math.round(qrSize*.035));
+ const gap=(frameMode!=="none"&&label)?Math.max(10,Math.round(qrSize*.018)):0;
+ const labelHeight=(frameMode!=="none"&&label)?Math.max(54,Math.round(qrSize*.085)):0;
+ const content=qrSize+quiet*2;
+ const width=content+pad*2;
+ const height=content+pad*2+gap+labelHeight;
+ const c=document.createElement("canvas");
+ c.width=width;c.height=height;
+ const ctx=c.getContext("2d");
+ if(!ctx) return null;
+ ctx.fillStyle=frameBg;ctx.fillRect(0,0,width,height);
+ const qx=pad+quiet,qy=pad+quiet;
+ if(source instanceof HTMLCanvasElement) ctx.drawImage(source,qx,qy,qrSize,qrSize);
+ else await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>{ctx.drawImage(im,qx,qy,qrSize,qrSize);resolve()};im.onerror=reject;im.src=source.src});
  if(frameMode!=="none"){
-  ctx.save();ctx.lineWidth=thickness;ctx.strokeStyle=frameColor;
-  const inset=thickness/2+2, left=inset, top=inset, w=c.width-thickness-4, h=c.height-thickness-4-labelHeight;
-  if(shape==="corners"){
-   const L=Math.max(36,Math.round(qrSize*.12));
-   [[left,top,1,1],[left+w-L,top,-1,1],[left,top+h-L,1,-1],[left+w-L,top+h-L,-1,-1]].forEach(([cx,cy,sx,sy])=>{ctx.beginPath();ctx.moveTo(cx,cy+sy*L);ctx.lineTo(cx,cy);ctx.lineTo(cx+sx*L,cy);ctx.stroke()});
-  }else{
-   const r=shape==="circle"?Math.min(w,h)/2:shape==="pill"?Math.min(h/2,80):shape==="rounded"||shape==="gradient"||shape==="neon"?24:shape==="speech"?18:shape==="ticket"?8:10;
-   ctx.beginPath();ctx.roundRect(left,top,w,h,r);ctx.stroke();
-   if(shape==="double"){ctx.lineWidth=Math.max(1,thickness/2);ctx.beginPath();ctx.roundRect(left+thickness*2,top+thickness*2,w-thickness*4,h-thickness*4,Math.max(4,r-3));ctx.stroke()}
-   if(shape==="gradient"){const g=ctx.createLinearGradient(0,0,c.width,c.height);g.addColorStop(0,frameColor);g.addColorStop(.5,"#00c9d8");g.addColorStop(1,"#7952d8");ctx.strokeStyle=g;ctx.lineWidth=thickness+3;ctx.beginPath();ctx.roundRect(left,top,w,h,r);ctx.stroke()}
-   if(shape==="neon"){ctx.shadowColor=frameColor;ctx.shadowBlur=18;ctx.lineWidth=thickness+2;ctx.beginPath();ctx.roundRect(left,top,w,h,r);ctx.stroke();ctx.shadowBlur=0}
-   if(shape==="ticket"){
-    ctx.setLineDash([Math.max(5,thickness*2),Math.max(4,thickness*1.5)]);ctx.beginPath();ctx.roundRect(left,top,w,h,r);ctx.stroke();ctx.setLineDash([]);
+  ctx.save();ctx.strokeStyle=frameColor;ctx.lineWidth=thickness;
+  const inset=thickness/2+2,left=inset,top=inset,w=width-thickness-4,h=height-thickness-4;
+  const r=shape==="pill"?Math.min(90,h/2):shape==="circle"?Math.min(w,h)/2:shape==="ticket"?12:shape==="arch"?Math.min(w/2,90):shape==="rounded"||shape==="neon"||shape==="gradient"||shape==="luxury"?30:shape==="speech"?22:shape==="scallop"?18:12;
+  if(shape==="corners"||shape==="tech"){
+   const L=Math.max(36,Math.round(Math.min(width,height)*.12));
+   [[left,top,1,1],[left+w-L,top,-1,1],[left,top+h-L,1,-1],[left+w-L,top+h-L,-1,-1]].forEach(([x,y,sx,sy])=>{ctx.beginPath();ctx.moveTo(x,y+sy*L);ctx.lineTo(x,y);ctx.lineTo(x+sx*L,y);ctx.stroke()});
+   if(shape==="tech"){
+    ctx.globalAlpha=.5;ctx.lineWidth=Math.max(1,thickness/2);
+    [[left+L+12,top+8,left+L+42,top+8],[left+L+12,top+14,left+L+30,top+14],[left+L+12,top+h-8,left+L+42,top+h-8],[left+w-L-42,top+8,left+w-L-12,top+8],[left+w-L-30,top+14,left+w-L-12,top+14]].forEach(v=>{ctx.beginPath();ctx.moveTo(v[0],v[1]);ctx.lineTo(v[2],v[3]);ctx.stroke()});
    }
+  } else {
+   if(shape==="gradient"||shape==="neon"){
+    const g=ctx.createLinearGradient(0,0,width,height);g.addColorStop(0,frameColor);g.addColorStop(.5,"#00c9d8");g.addColorStop(1,"#7952d8");ctx.strokeStyle=g;
+   }
+   if(shape==="neon"){ctx.shadowColor=frameColor;ctx.shadowBlur=20}
+   if(shape==="double"||shape==="luxury"){
+    ctx.beginPath();ctx.roundRect(left,top,w,h,r);ctx.stroke();
+    ctx.lineWidth=Math.max(1,thickness/2);ctx.beginPath();ctx.roundRect(left+thickness*2+4,top+thickness*2+4,w-(thickness*4+8),h-(thickness*4+8),Math.max(4,r-8));ctx.stroke();
+   } else if(shape==="ticket"){
+    ctx.setLineDash([Math.max(7,thickness*2),Math.max(5,thickness*1.5)]);ctx.beginPath();ctx.roundRect(left,top,w,h,r);ctx.stroke();ctx.setLineDash([]);
+   } else if(shape==="scallop"||shape==="wave"){
+    // A decorative top and bottom edge with a clean outer outline.
+    ctx.beginPath();ctx.roundRect(left,top,w,h,12);ctx.stroke();ctx.lineWidth=Math.max(1,thickness/2);
+    for(let x=left+18;x<left+w-10;x+=24){ctx.beginPath();ctx.arc(x,top,7,Math.PI,0);ctx.stroke();ctx.beginPath();ctx.arc(x,top+h,7,0,Math.PI);ctx.stroke()}
+   } else {
+    ctx.beginPath();
+    if(shape==="arch"){ctx.moveTo(left,top+h);ctx.lineTo(left,top+r);ctx.quadraticCurveTo(left,top,left+w/2,top);ctx.quadraticCurveTo(left+w,top,left+w,top+r);ctx.lineTo(left+w,top+h);ctx.closePath()}
+    else ctx.roundRect(left,top,w,h,r);
+    ctx.stroke();
+   }
+   ctx.shadowBlur=0;
   }
   ctx.restore();
- }
- // Draw the QR itself after the frame background so the complete composition is exported.
- if(source instanceof HTMLCanvasElement)ctx.drawImage(source,x,y,qrSize,qrSize);
- else await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>{ctx.drawImage(im,x,y,qrSize,qrSize);resolve()};im.onerror=reject;im.src=source.src});
- if(labelHeight){
-  const lx=Math.max(12,Math.round(c.width*.08)),ly=y+qrSize+Math.max(8,Math.round(pad*.25)),lw=c.width-lx*2,lh=labelHeight-12;
-  ctx.fillStyle=frameColor;ctx.beginPath();ctx.roundRect(lx,ly,lw,lh,Math.min(12,lh/3));ctx.fill();
-  ctx.fillStyle=textColor;ctx.font=`700 ${Math.max(18,Math.round(qrSize*.035))}px Arial`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(label,c.width/2,ly+lh/2,lw-20);
+  if(labelHeight){
+   const lx=pad+quiet,ly=pad+quiet+qrSize+gap,lw=qrSize,lh=labelHeight;
+   const radius=shape==="pill"?lh/2:shape==="ticket"?4:10;
+   ctx.fillStyle=frameColor;
+   if(shape==="gradient"){const g=ctx.createLinearGradient(lx,ly,lx+lw,ly+lh);g.addColorStop(0,frameColor);g.addColorStop(.5,"#00c9d8");g.addColorStop(1,"#7952d8");ctx.fillStyle=g}
+   ctx.beginPath();ctx.roundRect(lx,ly,lw,lh,radius);ctx.fill();
+   ctx.fillStyle=textColor;ctx.font=`800 ${Math.max(20,Math.round(qrSize*.038))}px Arial, sans-serif`;ctx.textAlign="center";ctx.textBaseline="middle";
+   ctx.fillText(label,width/2,ly+lh/2,lw-28);
+  }
  }
  return c;
 }
@@ -1066,7 +1091,7 @@ function qrStudioInputIds(){
  return [
   "qrFg2","qrBg2","qrTransparent","qrEC2","qrSize2","qrSizeMirror","qrMargin2",
   "qrFrame","qrFrameColor","qrFrameText","qrFrameBg","qrFrameTextColor",
-  "qrFrameThickness","qrFourthCorner","qrLogoSize","qrCaptionOn","qrCaption",
+  "qrFrameThickness","qrFourthCorner","qrCaptionOn","qrCaption",
   "qrEncoding","qrQuality"
  ];
 }
@@ -1197,7 +1222,6 @@ function saveQrStudioTemplate(){
   outer:qrOuterStyle,
   frameIcon:qrFrameIcon,
   frameShape:qrFrameShape,
-  logo:qrStudioLogo,
   createdAt:nowISO()
  });
  localStorage.setItem("nf_qr_templates",JSON.stringify(saved));
@@ -1219,7 +1243,6 @@ function loadQrStudioTemplate(){
   qrOuterStyle=t.outer||"square";
   qrFrameIcon=t.frameIcon||"none";
   qrFrameShape=t.frameShape||"square";
-  qrStudioLogo=t.logo||null;
   document.querySelectorAll("[data-dot]").forEach(x=>x.classList.toggle("active",x.dataset.dot===qrDotStyle));
   document.querySelectorAll("[data-inner]").forEach(x=>x.classList.toggle("active",x.dataset.inner===qrInnerStyle));
   document.querySelectorAll("[data-outer]").forEach(x=>x.classList.toggle("active",x.dataset.outer===qrOuterStyle));
@@ -1301,11 +1324,12 @@ function wireQrStudio(){
 
  [
   "qrFg2","qrBg2","qrTransparent","qrEC2","qrMargin2","qrFrame",
-  "qrFrameColor","qrFrameText","qrLogoSize","qrCaptionOn","qrCaption",
+  "qrFrameColor","qrFrameText","qrCaptionOn","qrCaption",
   "qrFrameBg","qrFrameTextColor","qrFrameThickness","qrFourthCorner",
   "qrEncoding","qrQuality"
  ].forEach(id=>bind(id,generateQrStudio));
 
+ document.querySelectorAll("[data-frame-color]").forEach(b=>b.onclick=()=>{$("qrFrameColor").value=b.dataset.frameColor;generateQrStudio()});
  const frameSelect=$("qrFrame");
  if(frameSelect)frameSelect.addEventListener("change",()=>{
   const map={none:"square",simple:"square",label:"square",scan:"scan",ribbon:"badge",top:"square",circle:"circle",rounded:"rounded",corners:"corners",double:"double",gradient:"gradient",neon:"neon",ticket:"ticket",pill:"pill"};
@@ -1313,16 +1337,6 @@ function wireQrStudio(){
   document.querySelectorAll("[data-frame-shape]").forEach(x=>x.classList.toggle("active",x.dataset.frameShape===qrFrameShape));
   generateQrStudio();
  });
-
- const logo=$("qrLogo2");
- if(logo)logo.onchange=e=>{
-  const f=e.target.files?.[0];if(!f)return;
-  const r=new FileReader();r.onload=()=>{qrStudioLogo=r.result;generateQrStudio()};r.readAsDataURL(f);
- };
-
- if($("useBMN.NEXUSLogo"))$("useBMN.NEXUSLogo").onclick=()=>{
-  qrStudioLogo=BMN_NEXUS_LOGO;generateQrStudio();toast("BMN.NEXUS logo applied");
- };
 
  document.querySelectorAll("[data-qrexp]").forEach(b=>b.onclick=()=>downloadQrStudio(b.dataset.qrexp));
  $("generateQr2").onclick=generateQrStudio;
@@ -1367,7 +1381,7 @@ function wireQrStudio(){
  document.querySelectorAll("[data-frame-shape]").forEach(b=>b.onclick=()=>{
   qrFrameShape=b.dataset.frameShape;
   document.querySelectorAll("[data-frame-shape]").forEach(x=>x.classList.toggle("active",x===b));
-  const reverse={square:"simple",rounded:"rounded",badge:"ribbon",circle:"circle",corners:"corners",speech:"simple",scan:"scan",double:"double",gradient:"gradient",neon:"neon",ticket:"ticket",pill:"pill"};
+  const reverse={square:"simple",rounded:"rounded",badge:"ribbon",circle:"circle",corners:"corners",speech:"simple",scan:"scan",double:"double",gradient:"gradient",neon:"neon",ticket:"ticket",pill:"pill",luxury:"double",tech:"corners",scallop:"simple",wave:"simple",arch:"rounded"};
   if($("qrFrame")&&reverse[qrFrameShape])$("qrFrame").value=reverse[qrFrameShape];
   generateQrStudio();
  });
