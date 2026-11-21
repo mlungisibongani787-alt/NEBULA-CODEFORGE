@@ -8,6 +8,7 @@
 <title>BMN.NEXUS QR Studio</title>
 <!-- CDN libraries -->
 <script defer="" src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script defer="" src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script defer="" src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <style>
 :root{
@@ -192,6 +193,7 @@ html[data-theme="dark"] .qr-result-stage{background:#fff}
 <button class="qr-type" data-qrtype="sms">▣ SMS</button>
 <button class="qr-type" data-qrtype="calendar">▣ Calendar</button>
 <button class="qr-type" data-qrtype="geo">⊕ Geolocation</button>
+<button class="qr-type" data-qrtype="map">📍 MAP QR</button>
 <button class="qr-type" data-qrtype="crypto">₿ Cryptocurrency</button>
 <button class="qr-type" data-qrtype="pdf">▤ PDF</button>
 <button class="qr-type" data-qrtype="social">♣ Social Media</button>
@@ -440,11 +442,12 @@ const QR_TYPES = {
  sms:{title:"SMS",html:`<div class="field"><label>Recipient</label><input id="qf_sms_to" placeholder="+27821234567"></div><div class="field"><label>Message</label><textarea id="qf_sms_msg" rows="4"></textarea></div>`},
  calendar:{title:"Calendar",html:`<div class="row"><div class="field"><label>Event Title</label><input id="qf_cal_title"></div><div class="field"><label>Location</label><input id="qf_cal_loc"></div></div><div class="row"><div class="field"><label>Start</label><input id="qf_cal_start" type="datetime-local"></div><div class="field"><label>End</label><input id="qf_cal_end" type="datetime-local"></div></div><div class="field"><label>Description</label><textarea id="qf_cal_desc" rows="3"></textarea></div>`},
  geo:{title:"Geolocation",html:`<div class="row"><div class="field"><label>Latitude</label><input id="qf_lat" type="number" step="any" placeholder="-26.2041"></div><div class="field"><label>Longitude</label><input id="qf_lon" type="number" step="any" placeholder="28.0473"></div></div><div class="field"><label>Place Name</label><input id="qf_place" placeholder="Johannesburg"></div>`},
+ map:{title:"MAP QR — Create a location QR code",html:`<div class="field"><label>Paste an address or place name</label><input id="qf_map_address" autocomplete="street-address" placeholder="e.g. Nelson Mandela Square, Sandton, Johannesburg"></div><div class="toolbar" style="gap:8px;flex-wrap:wrap"><button class="btn btn-primary" id="mapAddressSearch" type="button">Search address</button><button class="btn" id="mapAddressClear" type="button">Clear</button></div><div id="mapSearchResults" class="small" aria-live="polite" style="margin-top:10px"></div><p class="small">Choose a search result for a precise map pin, or generate a QR directly from the address you pasted. Scanning opens the location in Google Maps.</p>`},
  crypto:{title:"Cryptocurrency",html:`<div class="row"><div class="field"><label>Currency</label><select id="qf_crypto"><option>Bitcoin</option><option>Ethereum</option><option>Bitcoin Cash</option><option>Litecoin</option></select></div><div class="field"><label>Address</label><input id="qf_crypto_addr"></div></div><div class="row"><div class="field"><label>Amount</label><input id="qf_crypto_amt" type="number" step="any"></div><div class="field"><label>Message</label><input id="qf_crypto_msg"></div></div>`},
  pdf:{title:"PDF / File",html:`<div class="file-drop"><input id="qf_pdf" type="file" accept=".pdf,.txt,.csv,.xlsx,.doc,.docx,image/*"><p>Choose a file. CodeForge stores file metadata in the QR unless a public/hosted URL is supplied.</p></div><div class="field mt"><label>Hosted File URL (optional)</label><input id="qf_pdf_url" placeholder="https://..."></div>`},
  social:{title:"Social Media",html:`<div class="row"><div class="field"><label>Platform</label><select id="qf_social_platform"><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>LinkedIn</option><option>YouTube</option><option>X</option><option>Website</option></select></div><div class="field"><label>Profile URL</label><input id="qf_social_url" placeholder="https://"></div></div>`}
 };
-let activeQrType="url", qrStudioPayload="";
+let activeQrType="url", qrStudioPayload="", mapQrResolved=null;
 function qrField(id){return document.getElementById(id)?.value?.trim()||""}
 function setQrType(type){
  activeQrType=type;document.querySelectorAll(".qr-type").forEach(b=>b.classList.toggle("active",b.dataset.qrtype===type));
@@ -469,6 +472,12 @@ function buildQrPayload(){
    return `BEGIN:VEVENT\\nSUMMARY:${escQr(qrField("qf_cal_title"))}\\nLOCATION:${escQr(qrField("qf_cal_loc"))}\\nDTSTART:${a}\\nDTEND:${b}\\nDESCRIPTION:${escQr(qrField("qf_cal_desc"))}\\nEND:VEVENT`;
  }
  case"geo": return `geo:${qrField("qf_lat")},${qrField("qf_lon")}${qrField("qf_place")?"?q="+encodeURIComponent(qrField("qf_place")):""}`;
+ case"map": {
+   const address=qrField("qf_map_address");
+   if(!address) return "";
+   const query=mapQrResolved?.address===address ? `${mapQrResolved.lat},${mapQrResolved.lon}` : address;
+   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+ }
  case"crypto": {
    const map={Bitcoin:"bitcoin",Ethereum:"ethereum","Bitcoin Cash":"bitcoincash",Litecoin:"litecoin"};
    return `${map[qrField("qf_crypto")]||"bitcoin"}:${qrField("qf_crypto_addr")}${qrField("qf_crypto_amt")?"?amount="+encodeURIComponent(qrField("qf_crypto_amt")):""}${qrField("qf_crypto_msg")?"&message="+encodeURIComponent(qrField("qf_crypto_msg")):""}`;
@@ -494,6 +503,10 @@ function drawStyledQr(){
  const stage=$("qrStudioPreview"); if(!stage)return false;
  const bg=$("qrBg2").value||"#ffffff", fg=$("qrFg2").value||"#087443";
  stage.innerHTML="";
+ const exportRoot=document.createElement("div");
+ exportRoot.id="qrExportRoot";
+ Object.assign(exportRoot.style,{display:"inline-flex",flexDirection:"column",alignItems:"center",justifyContent:"center",width:"max-content",maxWidth:"100%",boxSizing:"border-box",background:"transparent"});
+ stage.appendChild(exportRoot);
 
  const thickness=Math.max(1,+$("qrFrameThickness").value||5);
  const frameColor=$("qrFrameColor").value||"#000000";
@@ -526,7 +539,7 @@ function drawStyledQr(){
  qrHost.style.padding=Math.max(0,+$("qrMargin2").value||4)+"px";
  qrHost.style.boxSizing="content-box";
  art.appendChild(qrHost);
- stage.appendChild(art);
+ exportRoot.appendChild(art);
 
  const rendered=drawQr(qrHost,payload,size,fg,$("qrTransparent").value==="yes"?"#ffffff":bg);
 
@@ -575,7 +588,7 @@ function drawStyledQr(){
 
  if(frameMode==="circle")art.style.aspectRatio="1/1";
  if($("qrCaptionOn").value==="yes"&&$("qrCaption").value.trim()){
-  const cap=document.createElement("div");cap.className="qr-caption";cap.textContent=$("qrCaption").value;cap.style.color=fg;stage.appendChild(cap);
+  const cap=document.createElement("div");cap.className="qr-caption";cap.textContent=$("qrCaption").value;cap.style.color=fg;exportRoot.appendChild(cap);
  }
  $("qrImageSizeReadout").textContent=`${size} × ${size}`;
  $("qrSizeLabel").textContent=size;$("qrSizeLabel2").textContent=size;$("qrSizeMirror").value=size;
@@ -775,76 +788,56 @@ function qrStudioCanvas(){
  return host.querySelector("canvas")||host.querySelector("img")||null;
 }
 async function buildQrDownloadCanvas(){
+ const root=$("qrExportRoot");
+ if(!root) return null;
+ // Export the exact live preview instead of drawing a second, different QR layout.
+ if(typeof window.html2canvas==="function"){
+  const qrNode=root.querySelector(".qr-code-holder");
+  const qrRect=qrNode?.getBoundingClientRect();
+  const rootRect=root.getBoundingClientRect();
+  const requested=Math.max(200,+$("qrSize2")?.value||1000);
+  const scale=qrRect?.width ? requested/qrRect.width : requested/Math.max(1,rootRect.width);
+  try{
+   return await window.html2canvas(root,{
+    backgroundColor:$("qrTransparent")?.value==="yes"?null:($("qrFrameBg")?.value||"#ffffff"),
+    scale:Math.max(1,Math.min(4,scale)),useCORS:true,logging:false,
+    width:rootRect.width,height:rootRect.height,
+    windowWidth:Math.max(document.documentElement.clientWidth,Math.ceil(rootRect.right)),
+    windowHeight:Math.max(document.documentElement.clientHeight,Math.ceil(rootRect.bottom))
+   });
+  }catch(err){console.error("Preview capture failed; using canvas fallback",err)}
+ }
  const source=qrStudioCanvas();
  if(!source) return null;
  const qrSize=source.width||source.naturalWidth||1000;
- const frameMode=$("qrFrame")?.value||"scan";
- const shape=qrFrameShape||"rounded";
+ const frameMode=$("qrFrame")?.value||"scan",shape=qrFrameShape||"rounded";
  const thickness=Math.max(1,+$("qrFrameThickness")?.value||5);
  const frameColor=$("qrFrameColor")?.value||"#111111";
  const frameBg=$("qrFrameBg")?.value||"#ffffff";
  const textColor=$("qrFrameTextColor")?.value||"#ffffff";
  const label=($("qrFrameText")?.value||"").trim();
- const margin=Math.max(0,+$("qrMargin2")?.value||4);
- // Keep a generous, even quiet zone around the QR modules.
- const quiet=Math.max(16,Math.round(qrSize*Math.max(.025,margin/100)));
- const pad=frameMode==="none"?quiet:Math.max(24,Math.round(qrSize*.035));
- const gap=(frameMode!=="none"&&label)?Math.max(10,Math.round(qrSize*.018)):0;
- const labelHeight=(frameMode!=="none"&&label)?Math.max(54,Math.round(qrSize*.085)):0;
- const content=qrSize+quiet*2;
- const width=content+pad*2;
- const height=content+pad*2+gap+labelHeight;
- const c=document.createElement("canvas");
- c.width=width;c.height=height;
- const ctx=c.getContext("2d");
- if(!ctx) return null;
+ const quiet=Math.max(16,Math.round(qrSize*.04)),pad=frameMode==="none"?quiet:Math.max(24,Math.round(qrSize*.035));
+ const labelHeight=frameMode!=="none"&&label?Math.max(54,Math.round(qrSize*.085)):0;
+ const width=qrSize+2*(quiet+pad),height=qrSize+2*(quiet+pad)+labelHeight+(labelHeight?12:0);
+ const c=document.createElement("canvas");c.width=width;c.height=height;
+ const ctx=c.getContext("2d");if(!ctx)return null;
  ctx.fillStyle=frameBg;ctx.fillRect(0,0,width,height);
- const qx=pad+quiet,qy=pad+quiet;
- if(source instanceof HTMLCanvasElement) ctx.drawImage(source,qx,qy,qrSize,qrSize);
- else await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>{ctx.drawImage(im,qx,qy,qrSize,qrSize);resolve()};im.onerror=reject;im.src=source.src});
+ const x=pad+quiet,y=pad+quiet;
+ if(source instanceof HTMLCanvasElement)ctx.drawImage(source,x,y,qrSize,qrSize);
+ else await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>{ctx.drawImage(im,x,y,qrSize,qrSize);resolve()};im.onerror=reject;im.src=source.src});
  if(frameMode!=="none"){
-  ctx.save();ctx.strokeStyle=frameColor;ctx.lineWidth=thickness;
-  const inset=thickness/2+2,left=inset,top=inset,w=width-thickness-4,h=height-thickness-4;
-  const r=shape==="pill"?Math.min(90,h/2):shape==="circle"?Math.min(w,h)/2:shape==="ticket"?12:shape==="arch"?Math.min(w/2,90):shape==="rounded"||shape==="neon"||shape==="gradient"||shape==="luxury"?30:shape==="speech"?22:shape==="scallop"?18:12;
+  ctx.strokeStyle=frameColor;ctx.lineWidth=thickness;
+  const inset=thickness/2+2,w=width-thickness-4,h=height-thickness-4;
+  const r=shape==="circle"?Math.min(w,h)/2:shape==="pill"?Math.min(90,h/2):shape==="ticket"?12:shape==="arch"?Math.min(w/2,90):shape==="rounded"||shape==="neon"||shape==="gradient"||shape==="luxury"?30:12;
+  if(shape==="gradient"||shape==="neon"){const g=ctx.createLinearGradient(0,0,width,height);g.addColorStop(0,frameColor);g.addColorStop(.5,"#00c9d8");g.addColorStop(1,"#7952d8");ctx.strokeStyle=g}
   if(shape==="corners"||shape==="tech"){
    const L=Math.max(36,Math.round(Math.min(width,height)*.12));
-   [[left,top,1,1],[left+w-L,top,-1,1],[left,top+h-L,1,-1],[left+w-L,top+h-L,-1,-1]].forEach(([x,y,sx,sy])=>{ctx.beginPath();ctx.moveTo(x,y+sy*L);ctx.lineTo(x,y);ctx.lineTo(x+sx*L,y);ctx.stroke()});
-   if(shape==="tech"){
-    ctx.globalAlpha=.5;ctx.lineWidth=Math.max(1,thickness/2);
-    [[left+L+12,top+8,left+L+42,top+8],[left+L+12,top+14,left+L+30,top+14],[left+L+12,top+h-8,left+L+42,top+h-8],[left+w-L-42,top+8,left+w-L-12,top+8],[left+w-L-30,top+14,left+w-L-12,top+14]].forEach(v=>{ctx.beginPath();ctx.moveTo(v[0],v[1]);ctx.lineTo(v[2],v[3]);ctx.stroke()});
-   }
-  } else {
-   if(shape==="gradient"||shape==="neon"){
-    const g=ctx.createLinearGradient(0,0,width,height);g.addColorStop(0,frameColor);g.addColorStop(.5,"#00c9d8");g.addColorStop(1,"#7952d8");ctx.strokeStyle=g;
-   }
-   if(shape==="neon"){ctx.shadowColor=frameColor;ctx.shadowBlur=20}
-   if(shape==="double"||shape==="luxury"){
-    ctx.beginPath();ctx.roundRect(left,top,w,h,r);ctx.stroke();
-    ctx.lineWidth=Math.max(1,thickness/2);ctx.beginPath();ctx.roundRect(left+thickness*2+4,top+thickness*2+4,w-(thickness*4+8),h-(thickness*4+8),Math.max(4,r-8));ctx.stroke();
-   } else if(shape==="ticket"){
-    ctx.setLineDash([Math.max(7,thickness*2),Math.max(5,thickness*1.5)]);ctx.beginPath();ctx.roundRect(left,top,w,h,r);ctx.stroke();ctx.setLineDash([]);
-   } else if(shape==="scallop"||shape==="wave"){
-    // A decorative top and bottom edge with a clean outer outline.
-    ctx.beginPath();ctx.roundRect(left,top,w,h,12);ctx.stroke();ctx.lineWidth=Math.max(1,thickness/2);
-    for(let x=left+18;x<left+w-10;x+=24){ctx.beginPath();ctx.arc(x,top,7,Math.PI,0);ctx.stroke();ctx.beginPath();ctx.arc(x,top+h,7,0,Math.PI);ctx.stroke()}
-   } else {
-    ctx.beginPath();
-    if(shape==="arch"){ctx.moveTo(left,top+h);ctx.lineTo(left,top+r);ctx.quadraticCurveTo(left,top,left+w/2,top);ctx.quadraticCurveTo(left+w,top,left+w,top+r);ctx.lineTo(left+w,top+h);ctx.closePath()}
-    else ctx.roundRect(left,top,w,h,r);
-    ctx.stroke();
-   }
-   ctx.shadowBlur=0;
+   [[inset,inset,1,1],[inset+w-L,inset,-1,1],[inset,inset+h-L,1,-1],[inset+w-L,inset+h-L,-1,-1]].forEach(([a,b,sx,sy])=>{ctx.beginPath();ctx.moveTo(a,b+sy*L);ctx.lineTo(a,b);ctx.lineTo(a+sx*L,b);ctx.stroke()});
+  }else{
+   if(shape==="double"||shape==="luxury"){ctx.beginPath();ctx.roundRect(inset,inset,w,h,r);ctx.stroke();ctx.lineWidth=Math.max(1,thickness/2);ctx.beginPath();ctx.roundRect(inset+thickness*2+4,inset+thickness*2+4,w-thickness*4-8,h-thickness*4-8,Math.max(4,r-8));ctx.stroke()}
+   else{ctx.beginPath();ctx.roundRect(inset,inset,w,h,r);ctx.stroke()}
   }
-  ctx.restore();
-  if(labelHeight){
-   const lx=pad+quiet,ly=pad+quiet+qrSize+gap,lw=qrSize,lh=labelHeight;
-   const radius=shape==="pill"?lh/2:shape==="ticket"?4:10;
-   ctx.fillStyle=frameColor;
-   if(shape==="gradient"){const g=ctx.createLinearGradient(lx,ly,lx+lw,ly+lh);g.addColorStop(0,frameColor);g.addColorStop(.5,"#00c9d8");g.addColorStop(1,"#7952d8");ctx.fillStyle=g}
-   ctx.beginPath();ctx.roundRect(lx,ly,lw,lh,radius);ctx.fill();
-   ctx.fillStyle=textColor;ctx.font=`800 ${Math.max(20,Math.round(qrSize*.038))}px Arial, sans-serif`;ctx.textAlign="center";ctx.textBaseline="middle";
-   ctx.fillText(label,width/2,ly+lh/2,lw-28);
-  }
+  if(labelHeight){const ly=y+qrSize+12,lh=labelHeight;ctx.fillStyle=frameColor;ctx.beginPath();ctx.roundRect(x,ly,qrSize,lh,shape==="pill"?lh/2:10);ctx.fill();ctx.fillStyle=textColor;ctx.font=`800 ${Math.max(20,Math.round(qrSize*.038))}px Arial`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(label,width/2,ly+lh/2,qrSize-28)}
  }
  return c;
 }
@@ -1078,6 +1071,46 @@ function wireQrStudio(){
   e.addEventListener("input",fn);
   e.addEventListener("change",fn);
  };
+ const dynamicFields=$("qrDynamicFields");
+ if(dynamicFields){
+  dynamicFields.addEventListener("input",e=>{
+   if(e.target.matches("input:not([type=file]),textarea,select")){
+    if(activeQrType==="map"&&e.target.id==="qf_map_address")mapQrResolved=null;
+    generateQrStudio();
+   }
+  });
+  dynamicFields.addEventListener("change",e=>{if(e.target.matches("input,textarea,select"))generateQrStudio()});
+  dynamicFields.addEventListener("click",async e=>{
+   if(e.target.id==="mapAddressClear"){
+    const field=$("qf_map_address");if(field)field.value="";
+    mapQrResolved=null;const out=$("mapSearchResults");if(out)out.textContent="";
+    generateQrStudio();return;
+   }
+   if(e.target.id==="mapAddressSearch"){
+    const address=qrField("qf_map_address"),out=$("mapSearchResults");
+    if(!address){if(out)out.textContent="Enter an address first.";return}
+    if(out)out.textContent="Searching for the address…";
+    e.target.disabled=true;
+    try{
+     const response=await fetch("https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&q="+encodeURIComponent(address),{headers:{Accept:"application/json"}});
+     if(!response.ok)throw new Error("Address search is temporarily unavailable.");
+     const matches=await response.json();
+     if(!matches.length){if(out)out.textContent="No matching address found. You can still generate a QR from the address you entered.";return}
+     if(out){out.innerHTML="<strong>Select the correct location:</strong>"+matches.map((m,i)=>`<button type="button" class="btn map-result" data-map-index="${i}" style="display:block;width:100%;text-align:left;margin-top:6px;white-space:normal">${esc(m.display_name)}</button>`).join("");out._matches=matches}
+    }catch(err){if(out)out.textContent=err.message||"Could not search the address. Check your internet connection."}
+    finally{e.target.disabled=false}
+   }
+   const pick=e.target.closest("[data-map-index]");
+   if(pick){
+    const out=$("mapSearchResults"),m=out?._matches?.[Number(pick.dataset.mapIndex)];
+    if(!m)return;
+    const field=$("qf_map_address");if(field)field.value=m.display_name;
+    mapQrResolved={address:m.display_name,lat:m.lat,lon:m.lon};
+    if(out)out.textContent="Location selected. Your QR code will open this map pin.";
+    generateQrStudio();
+   }
+  });
+ }
 
  bind("qrSize2",e=>{$("qrSizeMirror").value=e.target.value;generateQrStudio()});
  bind("qrSizeMirror",e=>{$("qrSize2").value=e.target.value;generateQrStudio()});
